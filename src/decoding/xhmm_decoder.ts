@@ -26,6 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import { chordVocab, type ChordVocabName } from "./chord_vocab";
 import { Chord, NUM_TO_ABS_SCALE, shiftComplexChordArray } from "./complex_chord"
 
 export type ProbMatrix = number[][]
@@ -44,6 +45,24 @@ export class XHMMDecoder {
   chordNames: string[]
   knownChordArray: KnownChord[]
   knownTriadBass: number[][]
+
+  static fromVocab(
+    vocabName: ChordVocabName,
+    diffTransPenalty = 10.0,
+    beatTransPenalty: [number, number, number] = [5.0, 15.0, 30.0],
+    useBass = true,
+    use7 = true,
+    useExtended = true
+  ) {
+    return new XHMMDecoder(
+      chordVocab[vocabName],
+      diffTransPenalty,
+      beatTransPenalty,
+      useBass,
+      use7,
+      useExtended
+    )
+  }
 
   constructor(
     chordNames: string[],
