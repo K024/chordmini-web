@@ -13,7 +13,7 @@ function AppStatusBadge() {
   return (
     <span
       class={clsx(
-        "shrink-0 rounded-full px-3 py-1 text-xs font-semibold",
+        "shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors duration-300",
         status.value === "error"
           ? "bg-rose-100 text-rose-700"
           : status.value === "ready"
@@ -75,7 +75,7 @@ function ProgressStep({ step, index }: { step: typeof steps[number]; index: numb
     <div class="flex items-center gap-3">
       <div
         class={clsx(
-          "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold",
+          "flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold transition-colors duration-300",
           state === "done" && "border-emerald-400 bg-emerald-500 text-white",
           state === "active" && "border-amber-400 bg-amber-100 text-amber-700",
           state === "error" && "border-rose-400 bg-rose-100 text-rose-700",
