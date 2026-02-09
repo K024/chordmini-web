@@ -85,7 +85,7 @@ export function PlayerScroller({
     if (followPlayhead.value) {
       scrollSeconds.value = dragStartSeconds.current - deltaSeconds
     } else {
-      scrollSeconds.value = dragStartScrollSeconds.current + deltaSeconds
+      scrollSeconds.value = dragStartScrollSeconds.current - deltaSeconds
     }
   })
 

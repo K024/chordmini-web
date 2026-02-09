@@ -1,7 +1,15 @@
 
 ## ChordMini Web
 
+<div>
+  <a style="margin:0 auto" href="https://chordmini-web.pages.dev"><img src="https://chordmini-web.pages.dev/favicon.svg" width="48" height="48"></a>
+</div>
+
 Browser-based chord recognition. Works fully offline with all computation localized.
+
+![screenshot](https://github.com/user-attachments/assets/7ea62f43-554c-4eb1-9422-a721b33f6f2d)
+
+[Try it out](https://chordmini-web.pages.dev).
 
 ### Credits
 

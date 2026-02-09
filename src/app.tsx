@@ -22,8 +22,7 @@ export function App() {
             Drop a music file to start chord analysis
           </h1>
           <p class="max-w-2xl text-base text-slate-600">
-            Analysis is performed entirely in the browser using a hybrid CQT + ONNX inference pipeline.
-            All computation is localized and no data is sent to the server. Offline mode is also supported.
+            All computation runs entirely in the browser. Offline mode is also supported.
           </p>
         </header>
 
