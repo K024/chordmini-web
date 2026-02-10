@@ -28,8 +28,10 @@ export async function getModelSession(url: string) {
 
 
 
+/** shape: [frames, bins(288)] */
 export const inputName = "cqt"
 
+/** shape: [frames, probabilities] */
 export const outputNames = ["triad", "bass", "seventh", "ninth", "eleventh", "thirteenth"] as const
 
 

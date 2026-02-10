@@ -19,7 +19,7 @@ export interface CqtHeatmapOptions {
 }
 
 
-export function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOptions) {
+export async function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOptions) {
 
   const basePixelsPerFrame = options?.basePixelsPerFrame ?? BASE_PIXELS_PER_FRAME
   const pixelsPerBin = options?.pixelsPerBin ?? PIXELS_PER_BIN
@@ -38,15 +38,19 @@ export function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOption
   canvas.height = height
 
   const ctx = canvas.getContext("2d")
-  if (!ctx) return
+  if (!ctx) {
+    throw new Error("Failed to get canvas context")
+  }
+
+  const waitIdle = createIdleAwaiter()
 
   const image = ctx.createImageData(width, height)
   const range = cqt.max - cqt.min || 1
 
-  for (let bin = 0; bin < cqt.bins; bin += 1) {
-    const yBase = (cqt.bins - 1 - bin) * pixelsPerBin
-    for (let frame = 0; frame < cqt.frames; frame += 1) {
-      const value = cqt.data[bin * cqt.frames + frame]
+  for (let frame = 0; frame < cqt.frames; frame += 1) {
+    for (let bin = 0; bin < cqt.bins; bin += 1) {
+      const yBase = (cqt.bins - 1 - bin) * pixelsPerBin
+      const value = cqt.data[frame * cqt.bins + bin]
       const norm = Math.sqrt(Math.min(1, Math.max(0, (value - cqt.min) / range)))
       const hsl = interpolateHsl(minHsl, maxHsl, norm)
       const rgb = hslToRgb(hsl)
@@ -60,6 +64,10 @@ export function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOption
           image.data[idx + 3] = 255
         }
       }
+    }
+
+    if (frame % 200 === 0) {
+      await waitIdle()
     }
   }
 
@@ -155,4 +163,21 @@ function interpolateHsl(hsl1: Hsl, hsl2: Hsl, t: number): Hsl {
   const s = hsl1.s + (hsl2.s - hsl1.s) * t
   const l = hsl1.l + (hsl2.l - hsl1.l) * t
   return { h, s, l }
+}
+
+
+function createIdleAwaiter(maxTimeSegment = 50) {
+  let lastTime = performance.now()
+
+  function checkAndWait() {
+    const now = performance.now()
+    const delta = now - lastTime
+    if (delta < maxTimeSegment) {
+      return new Promise(resolve => requestIdleCallback(resolve))
+    }
+    lastTime = now
+    return Promise.resolve()
+  }
+
+  return checkAndWait
 }

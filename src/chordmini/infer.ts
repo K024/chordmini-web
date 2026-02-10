@@ -4,17 +4,10 @@ import type { PreprocessResult } from "./preprocess"
 import { lazyPromise, type ProgressReporter } from "../utils"
 
 
-export function createCqtTensor(cqt: Pick<PreprocessResult, "frames" | "bins" | "data">) {
+function createCqtTensor(cqt: Pick<PreprocessResult, "frames" | "bins" | "data">) {
   const frames = cqt.frames
   const bins = cqt.bins
-  const data = new Float32Array(frames * bins)
-  for (let bin = 0; bin < bins; bin += 1) {
-    const rowStart = bin * frames
-    for (let frame = 0; frame < frames; frame += 1) {
-      data[frame * bins + bin] = cqt.data[rowStart + frame]
-    }
-  }
-  return new ort.Tensor("float32", data, [frames, bins])
+  return new ort.Tensor("float32", cqt.data, [frames, bins])
 }
 
 

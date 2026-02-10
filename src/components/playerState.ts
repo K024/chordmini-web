@@ -61,7 +61,7 @@ export const playheadX = computed(() => {
 })
 
 
-export const heatmapData = signal<ReturnType<typeof drawCqtHeatmap> | null>(null)
+export const heatmapData = signal<Awaited<ReturnType<typeof drawCqtHeatmap>> | null>(null)
 
 effect(() => {
   const cqtData = cqt.value
@@ -69,8 +69,8 @@ effect(() => {
     heatmapData.value = null
     return
   }
-  const callback = requestIdleCallback(() => {
-    heatmapData.value = drawCqtHeatmap(cqtData)
+  const callback = requestIdleCallback(async () => {
+    heatmapData.value = await drawCqtHeatmap(cqtData)
     console.log("heatmapData", heatmapData.value)
   })
   return () => cancelIdleCallback(callback)
@@ -140,6 +140,14 @@ export function setupAudioElement(element: HTMLAudioElement) {
     console.log("teardownAudioElement", element)
 
     audioElement = null
+    currentTime.value = 0
+    optimisticScroll.value = {
+      lastReportTime: 0,
+      playbackRate: 0,
+    }
+    scrollSeconds.value = 0
+    playheadSeconds.value = 0
+
     element.removeEventListener("timeupdate", handleTime)
     element.removeEventListener("loadedmetadata", handleMeta)
     element.removeEventListener("play", handlePlay)

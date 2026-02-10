@@ -191,6 +191,7 @@ export function PlayerScroller({
     ? Math.min(1, Math.max(0, scrollSeconds.value / totalSeconds.value))
     : 0
   const leftPercent = progress * (100 - widthPercent)
+  const leftPx = leftPercent * viewportWidth.value / 100
 
   return (
     <div class="space-y-2">
@@ -238,7 +239,7 @@ export function PlayerScroller({
           class="absolute top-0 h-full bg-slate-500"
           style={{
             width: `${widthPercent}%`,
-            left: `${leftPercent}%`,
+            transform: `translateX(${leftPx}px)`,
           }}
         />
       </div>

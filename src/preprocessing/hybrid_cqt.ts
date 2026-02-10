@@ -38,6 +38,7 @@ export type HybridCqtParams = {
   resType?: "polyphase"
 }
 
+/** @returns [bins, frames] */
 export function hybridCqt(y: Float32Array, params: HybridCqtParams = {}): number[][] {
   const sr = params.sr ?? 22050
   const hopLength = params.hopLength ?? 512

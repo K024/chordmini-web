@@ -22,6 +22,7 @@ export interface PreprocessResult {
 }
 
 
+/** [bins, frames] => [frames, bins] as required by the ONNX model */
 export function flattenCqt(cqt: number[][]) {
   const bins = cqt.length
   const frames = cqt[0]?.length ?? 0
@@ -33,7 +34,7 @@ export function flattenCqt(cqt: number[][]) {
     const row = cqt[bin]
     for (let frame = 0; frame < frames; frame += 1) {
       const value = row[frame]
-      data[bin * frames + frame] = value
+      data[frame * bins + bin] = value
       if (value < min) min = value
       if (value > max) max = value
     }
