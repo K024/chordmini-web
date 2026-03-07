@@ -3,7 +3,6 @@ import { showToast } from "./toastState"
 import { hasUpdate, isFirstInstalled, isControlled, register } from "./register"
 
 let serviceWorkerNotificationsReady = false
-let hasShownControlled = false
 
 export function setupServiceWorkerNotifications() {
   if (serviceWorkerNotificationsReady) return

@@ -31,6 +31,7 @@ function handleRegistration(registration: ServiceWorkerRegistration) {
   }
 }
 
+
 export function register() {
   const publicUrl = new URL(import.meta.env.BASE_URL, window.location.href)
   if (
@@ -38,22 +39,19 @@ export function register() {
     "serviceWorker" in navigator &&
     publicUrl.origin === window.location.origin
   ) {
+    const swUrl = new URL("sw.js", publicUrl)
 
-    window.addEventListener("load", () => {
-      const swUrl = new URL("sw.js", publicUrl)
+    navigator.serviceWorker
+      .register(swUrl)
+      .then(handleRegistration)
+      .catch(error => console.error("Error registering service worker:", error))
 
-      navigator.serviceWorker
-        .register(swUrl)
-        .then(handleRegistration)
-        .catch(error => console.error("Error registering service worker:", error))
-
-      // when a service worker skip waiting, reload all pages
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (isControlled.value)
-          window.location.reload()
-        else
-          isControlled.value = true
-      })
+    // when a service worker skip waiting, reload all pages
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (isControlled.value)
+        window.location.reload()
+      else
+        isControlled.value = true
     })
   }
   else {
