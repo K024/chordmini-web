@@ -1,12 +1,27 @@
 import { expose } from "comlink"
-import { preprocess, inferChordModels, decodeChords, type ChordSegment } from "./chordmini"
+import { preprocess, inferChordModels, decodeChords, type ChordSegment, decodeAudio, sampleRates, type BeatEvent, preprocessBeatFeatures, inferBeatModels, decodeBeatEvents } from "./chordmini"
 import { hasUpdate } from "./service-worker/register"
 import type { ProgressReporter } from "./utils"
 
 
+
+// api messages
+
 const version = "0.0.1"
 
+interface ChordMiniComlinkApiMessage {
+  type: "chordmini-api"
+  port: MessagePort
+}
+
+
+// api definitions
+
 interface RecognizeChordsArgs {
+  audio: File
+}
+
+interface RecognizeBeatsArgs {
   audio: File
 }
 
@@ -15,22 +30,34 @@ interface ChordMiniApi {
     args: RecognizeChordsArgs,
     onLogProgress?: (message: string, stepProgress?: number) => void
   ) => Promise<ChordSegment[]>
+  recognizeBeats: (
+    args: RecognizeBeatsArgs,
+    onLogProgress?: ProgressReporter
+  ) => Promise<BeatEvent[]>
   forceUpdate: () => void
   version: () => string
 }
 
 
+
+// functionalities
+
 async function recognizeChords(args: RecognizeChordsArgs, onLogProgress?: ProgressReporter) {
   const { audio } = args
-  const processed = await preprocess(audio, onLogProgress)
+  const decodedAudio = await decodeAudio(audio, sampleRates.chord, onLogProgress)
+  const processed = await preprocess(decodedAudio, onLogProgress)
   const inferred = await inferChordModels(processed, onLogProgress)
   const decoded = await decodeChords(inferred, processed)
   return decoded
 }
 
-interface ChordMiniComlinkApiMessage {
-  type: "chordmini-api"
-  port: MessagePort
+async function recognizeBeats(args: RecognizeBeatsArgs, onLogProgress?: ProgressReporter) {
+  const { audio } = args
+  const decodedAudio = await decodeAudio(audio, sampleRates.beat, onLogProgress)
+  const features = await preprocessBeatFeatures(decodedAudio, onLogProgress)
+  const activations = await inferBeatModels(features, onLogProgress)
+  const events = await decodeBeatEvents(activations, true, onLogProgress)
+  return events
 }
 
 
@@ -64,6 +91,7 @@ export function exposeParentWindowApi() {
       const port: MessagePort = data.port
       const api: ChordMiniApi = {
         recognizeChords,
+        recognizeBeats,
         forceUpdate: () => hasUpdate.value && hasUpdate.value(),
         version: () => version,
       }

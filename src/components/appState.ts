@@ -1,5 +1,18 @@
 import { signal } from "@preact/signals"
-import { preprocess, decodeChords, inferChordModels, type PreprocessResult, type ChordSegment, type ProbList } from "../chordmini"
+import {
+  decodeAudio,
+  preprocess,
+  decodeChords,
+  inferChordModels,
+  type PreprocessResult,
+  type BeatEvent,
+  type ChordSegment,
+  type ProbList,
+  preprocessBeatFeatures,
+  inferBeatModels,
+  decodeBeatEvents,
+  sampleRates,
+} from "../chordmini"
 // import { estimateKey, getKeyMarkers, type EstimatedChordSegment, type KeyMarker } from "../key-estimation/estimate-key"
 import { downloadFile } from "../utils"
 
@@ -26,6 +39,11 @@ export const duration = signal<number>(0)
 export const cqt = signal<PreprocessResult | null>(null)
 const inferredProbList = signal<ProbList | null>(null)
 export const rawChords = signal<ChordSegment[]>([])
+export const beatEvents = signal<BeatEvent[]>([])
+
+
+// TODO: remove this
+export const modelBeatActivations = signal<[number, number][]>([])
 
 
 let processing = false
@@ -39,6 +57,8 @@ export async function handleFile(file: File) {
   errorStep.value = null
   error.value = null
   rawChords.value = []
+  beatEvents.value = []
+  modelBeatActivations.value = []
   // estimatedChords.value = []
   // estimatedKeyMarkers.value = []
   cqt.value = null
@@ -51,20 +71,38 @@ export async function handleFile(file: File) {
 
   try {
     statusMessage.value = "Running hybrid CQT..."
-    const result = await preprocess(file, message => {
+    const decodedAudio = await decodeAudio(file, sampleRates.chord, message => {
+      statusMessage.value = message
+    })
+    fileInfo.value = { name: file.name, duration: decodedAudio.duration }
+
+    const preprocessed = await preprocess(decodedAudio, message => {
       statusMessage.value = message
     })
 
-    fileInfo.value = { name: file.name, duration: result.duration }
-    cqt.value = result
+    const decodedAudioForBeat = await decodeAudio(file, sampleRates.beat, message => {
+      statusMessage.value = message
+    })
+    const beatFeatures = await preprocessBeatFeatures(decodedAudioForBeat, message => {
+      statusMessage.value = message
+    })
+    cqt.value = preprocessed
 
-    duration.value = result.duration
+    duration.value = preprocessed.duration
     audioUrl.value = URL.createObjectURL(file)
 
     stage = "inferring"
     status.value = stage
     statusMessage.value = "Loading models and running inference..."
-    const probList = await inferChordModels(result, message => {
+    const beatActivations = await inferBeatModels(beatFeatures, message => {
+      statusMessage.value = message
+    })
+    modelBeatActivations.value = beatActivations
+    beatEvents.value = await decodeBeatEvents(beatActivations, true, message => {
+      statusMessage.value = message
+    })
+
+    const probList = await inferChordModels(preprocessed, message => {
       statusMessage.value = message
     })
     inferredProbList.value = probList
@@ -72,7 +110,7 @@ export async function handleFile(file: File) {
     stage = "decoding"
     status.value = stage
     statusMessage.value = "Decoding chords..."
-    rawChords.value = await decodeChords(probList, result)
+    rawChords.value = await decodeChords(probList, preprocessed)
     // estimatedChords.value = estimateKey(rawChords.value)
     // estimatedKeyMarkers.value = getKeyMarkers(estimatedChords.value)
 
@@ -147,4 +185,13 @@ Object.assign(window, {
   //   const blob = new Blob([json], { type: "application/json" })
   //   downloadFile(blob, "estimated-chords.json")
   // },
+  downloadBeatEventsJson: () => {
+    if (!beatEvents.value) {
+      console.warn("No beat events to download")
+      return
+    }
+    const json = JSON.stringify(beatEvents.value, null, 2)
+    const blob = new Blob([json], { type: "application/json" })
+    downloadFile(blob, "beat-events.json")
+  },
 })

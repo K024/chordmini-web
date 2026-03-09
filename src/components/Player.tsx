@@ -1,4 +1,6 @@
 import { cqt } from "./appState"
+import { PlayerBeatActivationsOverlay } from "./PlayerBeatActivationsOverlay"
+import { PlayerBeatOverlay } from "./PlayerBeatOverlay"
 import { PlayerChordOverlay } from "./PlayerChordOverlay"
 import { PlayerControls } from "./PlayerControls"
 import { PlayerHeatmapOverlay } from "./PlayerHeatmapOverlay"
@@ -16,7 +18,10 @@ export function Player() {
             absoluteChildren={<PlayerPlayhead />}
           >
             <PlayerHeatmapOverlay />
+            {/* Test use */}
+            {/* <PlayerBeatActivationsOverlay /> */}
             <PlayerChordOverlay />
+            <PlayerBeatOverlay />
           </PlayerScroller>
         </div>
       ) : (

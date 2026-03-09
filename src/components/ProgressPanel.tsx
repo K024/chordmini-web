@@ -2,10 +2,10 @@ import clsx from "clsx"
 import { error, errorStep, status, statusMessage, type AppStatus } from "./appState"
 
 
-const steps = [
-  { id: "preprocess", label: "Preprocess audio (hybrid CQT)" },
-  { id: "infer", label: "Infer all models + average" },
-  { id: "decode", label: "HMM decode chords" },
+const steps: { id: AppStatus; label: string }[] = [
+  { id: "preprocessing", label: "Preprocess audio (hybrid CQT)" },
+  { id: "inferring", label: "Infer all models + average" },
+  { id: "decoding", label: "HMM decode chords" },
 ]
 
 
@@ -46,25 +46,19 @@ function ProgressTitle() {
 
 
 function getStepState(status: AppStatus, index: number, errorStep: number | null) {
-  if (status === "error") {
-    if (errorStep === index) return "error"
-    if (errorStep !== null && index < errorStep) return "done"
-    return "pending"
+  if (status === "error" && errorStep === index) {
+    return "error"
   }
   if (status === "ready") {
     return "done"
   }
-  if (status === "decoding") {
-    if (index < 2) return "done"
-    return index === 2 ? "active" : "pending"
-  }
-  if (status === "inferring") {
-    if (index === 0) return "done"
-    return index === 1 ? "active" : "pending"
-  }
-  if (status === "preprocessing") {
-    return index === 0 ? "active" : "pending"
-  }
+
+  const currentStep = steps.findIndex((s) => s.id === status)
+  if (currentStep === -1) return "pending"
+
+  if (index < currentStep) return "done"
+  if (index === currentStep) return "active"
+
   return "pending"
 }
 

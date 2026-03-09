@@ -29,11 +29,13 @@ export async function inferChordModels(cqt: Pick<PreprocessResult, "frames" | "b
   const outputs: ort.InferenceSession.ReturnType[] = []
 
   for (const [index, session] of sessions.entries()) {
-    const percent = ((index + 1) / sessions.length) * 100
+    const percent = (index / sessions.length) * 100
     progress?.(`Running model ${index + 1}/${sessions.length}`, percent)
     const result = await inferSession(session, tensor)
     outputs.push(result)
   }
+
+  progress?.("Averaging results...", 100)
 
   const averaged = outputs.length === 1
     ? outputs[0]

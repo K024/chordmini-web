@@ -2,7 +2,7 @@ import { ort } from "./ort"
 import type { ProbList, ProbMatrix } from "../decoding/xhmm_decoder"
 
 
-const allModelsSource = import.meta.glob("../assets/*.onnx", {
+const allModelsSource = import.meta.glob("../assets/joint_chord_net_*.onnx", {
   eager: true,
   import: "default",
   query: "?url",

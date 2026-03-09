@@ -40,17 +40,20 @@ export function App() {
             <a href="https://github.com/K024/chordmini-web" class="text-slate-900" target="_blank">GitHub Repository</a>
           </div>
           <div>
-            Special thanks to
+            Thanks to
             {` `}
             <a href="https://github.com/ptnghia-j/ChordMiniApp" class="text-slate-900" target="_blank">
               ChordMiniApp
+            </a>
+            ,{` `}
+            <a href="https://github.com/CPJKU/madmom" class="text-slate-900" target="_blank">
+              madmom
             </a>
             {` `}and{` `}
             <a href="https://github.com/music-x-lab" class="text-slate-900" target="_blank  ">
               Music X Lab
             </a>
-            {` `}
-            for all the help and inspiration.
+            .
           </div>
         </footer>
       </div>

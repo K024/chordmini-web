@@ -13,10 +13,20 @@ export default defineConfig({
       ignoreFileRegex: /\.(onnx|wasm)$/,
     }),
   ],
-  // server: {
-  //   headers: {
-  //     "Cross-Origin-Opener-Policy": "same-origin",
-  //     "Cross-Origin-Embedder-Policy": "require-corp",
-  //   },
-  // },
+  server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Resource-Policy": "cross-origin",
+    },
+  },
+  resolve: {
+    conditions: ["onnxruntime-web-use-extern-wasm", "import", "browser"],
+  },
+  build: {
+    minify: "esbuild",
+  },
+  esbuild: {
+    legalComments: "eof",
+  },
 })

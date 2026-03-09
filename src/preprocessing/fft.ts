@@ -51,9 +51,16 @@ export function irfft(reHalf: Float32Array, imHalf: Float32Array, n: number): Fl
 export function fftInPlace(re: Float32Array, im: Float32Array) {
   const n = re.length
   const levels = Math.log2(n)
-  if (Math.floor(levels) !== levels) {
-    throw new Error("FFT length must be a power of two")
+  if (Math.floor(levels) === levels) {
+    fftRadix2InPlace(re, im)
+    return
   }
+  fftBluesteinInPlace(re, im)
+}
+
+function fftRadix2InPlace(re: Float32Array, im: Float32Array) {
+  const n = re.length
+  const levels = Math.log2(n)
 
   for (let i = 0; i < n; i += 1) {
     const j = reverseBits(i, levels)
@@ -86,6 +93,66 @@ export function fftInPlace(re: Float32Array, im: Float32Array) {
       }
     }
   }
+}
+
+function fftBluesteinInPlace(re: Float32Array, im: Float32Array) {
+  const n = re.length
+  let m = 1
+  while (m < n * 2 + 1) m <<= 1
+
+  const are = new Float32Array(m)
+  const aim = new Float32Array(m)
+  const bre = new Float32Array(m)
+  const bim = new Float32Array(m)
+
+  for (let i = 0; i < n; i += 1) {
+    const angle = (Math.PI * ((i * i) % (2 * n))) / n
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    are[i] = re[i] * cos + im[i] * sin
+    aim[i] = -re[i] * sin + im[i] * cos
+    bre[i] = cos
+    bim[i] = sin
+    if (i !== 0) {
+      bre[m - i] = cos
+      bim[m - i] = sin
+    }
+  }
+
+  convolveComplex(are, aim, bre, bim)
+
+  for (let i = 0; i < n; i += 1) {
+    const angle = (Math.PI * ((i * i) % (2 * n))) / n
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    re[i] = are[i] * cos + aim[i] * sin
+    im[i] = -are[i] * sin + aim[i] * cos
+  }
+}
+
+function convolveComplex(
+  xre: Float32Array,
+  xim: Float32Array,
+  yre: Float32Array,
+  yim: Float32Array
+) {
+  const n = xre.length
+  const xr = xre.slice()
+  const xi = xim.slice()
+  const yr = yre.slice()
+  const yi = yim.slice()
+
+  fftRadix2InPlace(xr, xi)
+  fftRadix2InPlace(yr, yi)
+  for (let i = 0; i < n; i += 1) {
+    const tr = xr[i] * yr[i] - xi[i] * yi[i]
+    const ti = xr[i] * yi[i] + xi[i] * yr[i]
+    xr[i] = tr
+    xi[i] = ti
+  }
+  ifftInPlace(xr, xi)
+  xre.set(xr)
+  xim.set(xi)
 }
 
 function reverseBits(value: number, bits: number): number {

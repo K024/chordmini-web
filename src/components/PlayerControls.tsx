@@ -1,4 +1,4 @@
-import { colorMode, followPlayhead, heatmapWidth, pixelsPerFrame, zoomX } from "./playerState"
+import { colorMode, followPlayhead, heatmapWidth, pixelsPerFrame, showBeatEvents, zoomX } from "./playerState"
 
 
 const MIN_ZOOM_X = 0.1
@@ -55,6 +55,18 @@ export function PlayerControls() {
           }}
         />
         Keep playhead centered
+      </label>
+
+      <label class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <input
+          type="checkbox"
+          class="h-4 w-4 rounded border-slate-300 text-slate-900"
+          checked={showBeatEvents.value}
+          onChange={(event) => {
+            showBeatEvents.value = event.currentTarget.checked
+          }}
+        />
+        Show beat markers
       </label>
 
       <div class="ml-auto text-xs text-slate-400">

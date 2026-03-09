@@ -20,6 +20,8 @@ export const followPlayhead = signal(true)
 export const colorMode = signal<ChordColorMode>("root")
 export const isDragging = signal(false)
 
+export const showBeatEvents = signal(true)
+
 export const scrollSeconds = signal(0)
 export const playheadSeconds = signal(0) // use another signal which considers optimistic scroll
 export const viewportWidth = signal(0)
