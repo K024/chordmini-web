@@ -1,8 +1,8 @@
 import type { PreprocessResult } from "../chordmini"
 
 
-const BASE_PIXELS_PER_FRAME = 3
-const PIXELS_PER_BIN = 3
+const BASE_PIXELS_PER_FRAME = 1
+const PIXELS_PER_BIN = 1
 
 const DEFAULT_MIN_COLOR = "#2a0a53"
 const DEFAULT_MAX_COLOR = "#f3570f"

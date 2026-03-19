@@ -29,7 +29,7 @@ export const viewportWidth = signal(0)
 
 
 export const pixelsPerFrame = computed(() =>
-  Math.max(1, Math.round(BASE_PIXELS_PER_FRAME * zoomX.value))
+  Math.max(1, Math.round(BASE_PIXELS_PER_FRAME * zoomX.value * 10) / 10)
 )
 export const heatmapWidth = computed(() =>
   cqt.value ? cqt.value.frames * pixelsPerFrame.value : 0

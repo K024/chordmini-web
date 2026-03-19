@@ -1,7 +1,7 @@
 import { colorMode, followPlayhead, heatmapWidth, pixelsPerFrame, showBeatEvents, zoomX } from "./playerState"
 
 
-const MIN_ZOOM_X = 0.1
+const MIN_ZOOM_X = 0.3
 const MAX_ZOOM_X = 2.0
 
 

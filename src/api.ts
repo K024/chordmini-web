@@ -1,5 +1,6 @@
 import { expose } from "comlink"
 import { preprocess, inferChordModels, decodeChords, type ChordSegment, decodeAudio, sampleRates, type BeatEvent, preprocessBeatFeatures, inferBeatModels, decodeBeatEvents } from "./chordmini"
+import { estimateKey, type EstimatedChordSegment } from "./key-estimation/estimate-key"
 import { hasUpdate } from "./service-worker/register"
 import type { ProgressReporter } from "./utils"
 
@@ -34,6 +35,9 @@ interface ChordMiniApi {
     args: RecognizeBeatsArgs,
     onLogProgress?: ProgressReporter
   ) => Promise<BeatEvent[]>
+  estimateKey: (
+    chords: ChordSegment[],
+  ) => EstimatedChordSegment[]
   forceUpdate: () => void
   version: () => string
 }
@@ -92,6 +96,7 @@ export function exposeParentWindowApi() {
       const api: ChordMiniApi = {
         recognizeChords,
         recognizeBeats,
+        estimateKey,
         forceUpdate: () => hasUpdate.value && hasUpdate.value(),
         version: () => version,
       }

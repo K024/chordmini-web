@@ -190,21 +190,36 @@ export function chordTransitionLogProb(key: number, chordFrom: Chord | null, cho
 
 const chordStayingTemperature = 0.3
 const chordStayingProbFactor = 1
+const tonalChordStayingFactor = 2.2
+
+const tonalChordStayingRatings = {
+  maj: {
+    maj: [1.5, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+    min: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
+    dim: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  },
+  min: {
+    maj: [0.5, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0],
+    min: [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+    dim: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  },
+}
+
 
 const normalizedChordStayingLogProbs = {
   maj: normalizeLogProb([
-    ...rawChordStayingRatings.maj.maj,
-    ...rawChordStayingRatings.maj.min,
-    ...rawChordStayingRatings.maj.dim,
+    ...rawChordStayingRatings.maj.maj.map((score, index) => score + tonalChordStayingRatings.maj.maj[index] * tonalChordStayingFactor),
+    ...rawChordStayingRatings.maj.min.map((score, index) => score + tonalChordStayingRatings.maj.min[index] * tonalChordStayingFactor),
+    ...rawChordStayingRatings.maj.dim.map((score, index) => score + tonalChordStayingRatings.maj.dim[index] * tonalChordStayingFactor),
   ], chordStayingTemperature, chordStayingProbFactor),
   min: normalizeLogProb([
-    ...rawChordStayingRatings.min.maj,
-    ...rawChordStayingRatings.min.min,
-    ...rawChordStayingRatings.min.dim,
+    ...rawChordStayingRatings.min.maj.map((score, index) => score + tonalChordStayingRatings.min.maj[index] * tonalChordStayingFactor),
+    ...rawChordStayingRatings.min.min.map((score, index) => score + tonalChordStayingRatings.min.min[index] * tonalChordStayingFactor),
+    ...rawChordStayingRatings.min.dim.map((score, index) => score + tonalChordStayingRatings.min.dim[index] * tonalChordStayingFactor),
   ], chordStayingTemperature, chordStayingProbFactor),
 }
 
-// console.log(normalizedChordStayingLogProbs)
+console.log(normalizedChordStayingLogProbs)
 
 
 function chordTypeOffset(chord: Chord) {
