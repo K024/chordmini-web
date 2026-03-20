@@ -1,6 +1,8 @@
 import { TriadTypes, type Chord } from "../decoding/complex_chord"
 
 
+export const DEBUG_HMM_PARAMS = false // import.meta.env.DEV
+
 /*
 Raw key transition correlation matrix from the paper.
 
@@ -21,7 +23,7 @@ const rawKeyTransitionCorrelation = {
 
 
 const NINF = -1000 // small enough to be ignored
-const NTRANS = 1.00 // non diatonic chord transitions score
+const NTRANS = 3.50 // non diatonic chord transitions score
 
 /*
 Raw chord transition ratings from the paper.
@@ -29,7 +31,7 @@ Raw chord transition ratings from the paper.
 The score is between 1 and 7
 */
 const rawChordTransitionRatings = [
-  [NTRANS, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00], // N
+  [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00], // N
   [NTRANS, NINF, 5.10, 4.78, 5.91, 5.94, 5.26, 4.57], // I
   [NTRANS, 5.69, NINF, 4.00, 4.76, 6.10, 4.97, 5.41], // ii
   [NTRANS, 5.38, 4.47, NINF, 4.63, 5.03, 4.60, 4.47], // iii
@@ -77,8 +79,8 @@ function normalizeLogProb(scores: number[], temperature: number, scale: number =
 
 
 // only allows transition when significantly different from the previous key
-const transitionTemperature = 0.06
-const transitionProbFactor = 4
+const transitionTemperature = 1 / 50
+const transitionProbFactor = 3
 
 const normalizedKeyTransitionLogProbs = {
   maj: normalizeLogProb([
@@ -91,7 +93,7 @@ const normalizedKeyTransitionLogProbs = {
   ], transitionTemperature, transitionProbFactor),
 }
 
-// console.log(normalizedKeyTransitionLogProbs)
+if (DEBUG_HMM_PARAMS) console.log(normalizedKeyTransitionLogProbs)
 
 
 
@@ -118,14 +120,20 @@ export function keyTransitionLogProb(keyFrom: number, keyTo: number) {
 }
 
 
-const chordTransitionTemperature = 0.3
-const chordTransitionProbFactor = 1.8
+const chordTransitionTemperature = 1 / 7
+const chordTransitionProbFactor = 2
 
-const normalizedChordTransitionLogProbs = rawChordTransitionRatings.map(
-  row => normalizeLogProb(row, chordTransitionTemperature, chordTransitionProbFactor)
-)
+const normalizedChordTransitionLogProbs = normalizeLogProb(
+  rawChordTransitionRatings.flat(),
+  chordTransitionTemperature,
+  chordTransitionProbFactor
+).flatMap((_, index, array) => {
+  if (index % 8 === 0)
+    return [array.slice(index, index + 8)]
+  return []
+})
 
-// console.log(normalizedChordTransitionLogProbs)
+if (DEBUG_HMM_PARAMS) console.log(normalizedChordTransitionLogProbs)
 
 
 export const majorTonality = [
@@ -188,20 +196,20 @@ export function chordTransitionLogProb(key: number, chordFrom: Chord | null, cho
 }
 
 
-const chordStayingTemperature = 0.3
+const chordStayingTemperature = 1 / 7
 const chordStayingProbFactor = 1
-const tonalChordStayingFactor = 2.2
+const tonalChordStayingFactor = 2
 
 const tonalChordStayingRatings = {
   maj: {
-    maj: [1.5, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+    maj: [2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
     min: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0],
     dim: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   },
   min: {
-    maj: [0.5, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0],
-    min: [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1],
-    dim: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    maj: [0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0],
+    min: [2, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+    dim: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   },
 }
 
@@ -219,14 +227,14 @@ const normalizedChordStayingLogProbs = {
   ], chordStayingTemperature, chordStayingProbFactor),
 }
 
-console.log(normalizedChordStayingLogProbs)
+if (DEBUG_HMM_PARAMS) console.log(normalizedChordStayingLogProbs)
 
 
 function chordTypeOffset(chord: Chord) {
   switch (chord.triad) {
     case TriadTypes.min:
-    case TriadTypes.aug:
       return 12 // minor
+    case TriadTypes.aug:
     case TriadTypes.dim:
       return 24 // dim
     default:

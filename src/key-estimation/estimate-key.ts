@@ -5,6 +5,7 @@ import {
   chordTransitionLogProb,
   chordStayingLogProb,
   chordDurationTimeFactor,
+  DEBUG_HMM_PARAMS,
 } from "./hmm-params"
 import { getStandardScaleName, renameChord } from "./renaming"
 
@@ -23,7 +24,7 @@ function argMax(scores: number[]) {
 }
 
 
-function decodeHmm(parsedChords: Chord[], chordDuration: number[]) {
+function decodeHmm(parsedChords: Chord[], chordDuration: number[], originalChords: ChordSegment[]) {
   const length = parsedChords.length
   if (length === 0) {
     return []
@@ -35,9 +36,9 @@ function decodeHmm(parsedChords: Chord[], chordDuration: number[]) {
 
   const empty = Array(24).fill(0)
 
+  let lastChord: Chord | null = null
   for (let i = 0; i < length; i += 1) {
     const chord = parsedChords[i]
-    const lastChord = i > 0 ? parsedChords[i - 1] : null
     const duration = chordDuration[i]
     const lastKeyLogProbs = i > 0 ? dp[i - 1] : empty
     for (let currentKey = 0; currentKey < 24; currentKey += 1) {
@@ -59,6 +60,21 @@ function decodeHmm(parsedChords: Chord[], chordDuration: number[]) {
       dp[i][currentKey] = score
       pre[i][currentKey] = lastKey
     }
+
+    if (DEBUG_HMM_PARAMS) {
+      const scores = dp[i].map((score, key) => ({ score, key }))
+        .sort((a, b) => b.score - a.score).slice(0, 4)
+      console.log(
+        `i=${i} chord=${originalChords[i].label}\n`,
+        scores
+          .map(({ key, score }) => `${getStandardScaleName(key)}: ${score.toFixed(2)}  (${relativeLevel(chord.root, key)})`)
+          .join("\n")
+      )
+    }
+
+    if (chord.root >= 0 || duration > 1) {
+      lastChord = chord
+    }
   }
 
   let lastKey = argMax(dp[length - 1])
@@ -74,6 +90,16 @@ function decodeHmm(parsedChords: Chord[], chordDuration: number[]) {
 }
 
 
+const relativeLevels = [
+  "1", "b2", "2", "b3", "3", "4", "b5", "5", "b6", "6", "b7", "7",
+]
+function relativeLevel(root: number, key: number) {
+  if (root < 0) return "N"
+  const delta = (root - key + 24) % 12
+  return relativeLevels[delta]
+}
+
+
 
 export interface EstimatedChordSegment extends ChordSegment {
   key: string
@@ -85,7 +111,7 @@ export function estimateKey(chords: ChordSegment[]) {
   const parsedChords = chords.map(({ label }) => new Chord(label))
   const chordDuration = chords.map(({ start, end }) => end - start)
 
-  const keySequence = decodeHmm(parsedChords, chordDuration)
+  const keySequence = decodeHmm(parsedChords, chordDuration, chords)
 
   return chords.map<EstimatedChordSegment>((chord, index) => {
     return {
