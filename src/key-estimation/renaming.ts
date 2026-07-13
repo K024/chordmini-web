@@ -1,21 +1,20 @@
-import type { Chord } from "../decoding/complex_chord"
-
+import { parseChordRoot, parseKey } from "./hmm-params"
 
 type AccidentalPreference = "sharp" | "flat" | "neutral"
 
-const sharpScaleNames = [
+export const sharpScaleNames = [
   "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
 ]
 
-const flatScaleNames = [
+export const flatScaleNames = [
   "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B",
 ]
 
-const standardMajorScaleNames = [
+export const standardMajorScaleNames = [
   "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B",
 ]
 
-const standardMinorScaleNames = [
+export const standardMinorScaleNames = [
   "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B",
 ]
 
@@ -73,15 +72,17 @@ function chooseScaleName(root: number, preference: AccidentalPreference, isMajor
  * C major => 0, C# major => 1, ...
  * C minor => 12, C# minor => 13, ...
  */
-export function getStandardScaleName(key: number) {
-  const isMajor = key < 12
-  const preference = keyAccidentalPreference(key)
-  return chooseScaleName(key % 12, preference, isMajor) + (isMajor ? " major" : " minor")
+export function getStandardScaleName(key: string) {
+  const [root, isMinor] = parseKey(key)
+  const preference = keyAccidentalPreference(root)
+  return chooseScaleName(root, preference, !isMinor) + (!isMinor ? " major" : " minor")
 }
 
 
-export function renameChord(label: string, chord: Chord, key: number) {
-  if (chord.root < 0)
+export function renameChord(label: string, key: string) {
+  const root = parseChordRoot(label)
+  const [keyRoot, isMinor] = parseKey(key)
+  if (root === null)
     return label
 
   const colonPos = label.indexOf(":")
@@ -89,14 +90,12 @@ export function renameChord(label: string, chord: Chord, key: number) {
     return label
 
   const suffix = label.slice(colonPos + 1)
-  const isMajor = key < 12
-  const deltaKey = (chord.root - key + 24) % 12
+  const deltaKey = (root - keyRoot + 12) % 12
 
-  const keyPreference = keyAccidentalPreference(key)
-  const intervalPreference = deltaAccidentalPreference(deltaKey, isMajor)
+  const keyPreference = keyAccidentalPreference(keyRoot)
+  const intervalPreference = deltaAccidentalPreference(deltaKey, !isMinor)
   const preference = intervalPreference === "neutral" ? keyPreference : intervalPreference
 
-  const rootName = chooseScaleName(chord.root, preference, isMajor)
+  const rootName = chooseScaleName(root, preference, !isMinor)
   return `${rootName}:${suffix}`
 }
-
