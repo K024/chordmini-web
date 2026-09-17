@@ -203,6 +203,7 @@ export function PlayerScroller({
             background:
               "repeating-linear-gradient(90deg, rgba(148,163,184,0.12) 0 1px, transparent 1px 48px), repeating-linear-gradient(0deg, rgba(148,163,184,0.08) 0 1px, transparent 1px 48px), #f8fafc",
             height: TRACK_HEIGHT_PX,
+            contain: "layout paint style",
           }}
           onPointerDown={handleTrackPointerDown}
           onPointerMove={handleTrackPointerMove}
@@ -216,6 +217,8 @@ export function PlayerScroller({
             style={{
               width: heatmapWidth.value,
               height: TRACK_HEIGHT_PX,
+              // Keep this 2D: promoting the full long track to a 3D layer
+              // would increase GPU memory instead of helping content-visibility.
               transform: `translateX(${-scrollX.value}px)`,
             }}
           >

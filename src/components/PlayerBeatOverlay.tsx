@@ -15,7 +15,12 @@ export function PlayerBeatOverlay() {
           <div
             key={`${beat.time}-${beat.beatInBar}-${index}`}
             class="absolute bottom-2"
-            style={{ left, transform: "translateX(-50%)" }}
+            style={{
+              left,
+              transform: "translateX(-50%)",
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 8px 8px",
+            }}
           >
             {beat.isDownbeat ? (
               <div class="h-0 w-0 border-l-4 border-r-4 border-b-8 border-transparent border-b-orange-500" />

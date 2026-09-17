@@ -47,6 +47,8 @@ export function PlayerChordOverlay() {
               left,
               width: segWidth,
               maxWidth: Math.max(segWidth, 40),
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 20px 30px",
             }}
           >
             <span class="truncate drop-shadow">{segment.label.replace(":", " : ")}</span>
@@ -64,6 +66,8 @@ export function PlayerChordOverlay() {
             )}
             style={{
               left,
+              contentVisibility: "auto",
+              containIntrinsicSize: "auto 28px 28px",
             }}
           >
             <span class="truncate drop-shadow">{marker.key}</span>

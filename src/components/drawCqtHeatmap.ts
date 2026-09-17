@@ -3,6 +3,7 @@ import type { PreprocessResult } from "../chordmini"
 
 const BASE_PIXELS_PER_FRAME = 1
 const PIXELS_PER_BIN = 1
+const MAX_CHUNK_PIXEL_WIDTH = 2048
 
 const DEFAULT_MIN_COLOR = "#2a0a53"
 const DEFAULT_MAX_COLOR = "#f3570f"
@@ -19,10 +20,33 @@ export interface CqtHeatmapOptions {
 }
 
 
-export async function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOptions) {
+export interface CqtHeatmapChunk {
+  index: number
+  startFrame: number
+  frameCount: number
+  width: number
+  height: number
+  canvas: HTMLCanvasElement
+}
 
-  const basePixelsPerFrame = options?.basePixelsPerFrame ?? BASE_PIXELS_PER_FRAME
-  const pixelsPerBin = options?.pixelsPerBin ?? PIXELS_PER_BIN
+
+export interface CqtHeatmapRenderer {
+  width: number
+  height: number
+  frameCount: number
+  bins: number
+  basePixelsPerFrame: number
+  pixelsPerBin: number
+  chunkFrameCount: number
+  chunkCount: number
+  renderChunk: (index: number, canvas?: HTMLCanvasElement | null) => CqtHeatmapChunk
+}
+
+
+export function createCqtHeatmapRenderer(cqt: PreprocessResult, options?: CqtHeatmapOptions): CqtHeatmapRenderer {
+
+  const basePixelsPerFrame = Math.max(1, options?.basePixelsPerFrame ?? BASE_PIXELS_PER_FRAME)
+  const pixelsPerBin = Math.max(1, options?.pixelsPerBin ?? PIXELS_PER_BIN)
   const minColor = parseRgbColor(options?.minColor ?? DEFAULT_MIN_COLOR) || parseRgbColor(DEFAULT_MIN_COLOR)!
   const maxColor = parseRgbColor(options?.maxColor ?? DEFAULT_MAX_COLOR) || parseRgbColor(DEFAULT_MAX_COLOR)!
 
@@ -30,54 +54,90 @@ export async function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmap
   const minHsl = rgbToHsl(minColor)
   const maxHsl = rgbToHsl(maxColor)
 
-  const canvas = options?.canvas ?? document.createElement("canvas")
-
-  const width = cqt.frames * basePixelsPerFrame
+  const width = Math.max(0, cqt.frames * basePixelsPerFrame)
   const height = cqt.bins * pixelsPerBin
-  canvas.width = width
-  canvas.height = height
-
-  const ctx = canvas.getContext("2d")
-  if (!ctx) {
-    throw new Error("Failed to get canvas context")
-  }
-
-  const waitIdle = createIdleAwaiter()
-
-  const image = ctx.createImageData(width, height)
+  const chunkFrameCount = Math.max(1, Math.floor(MAX_CHUNK_PIXEL_WIDTH / basePixelsPerFrame))
+  const chunkCount = Math.max(1, Math.ceil(cqt.frames / chunkFrameCount))
   const range = cqt.max - cqt.min || 1
 
-  for (let frame = 0; frame < cqt.frames; frame += 1) {
-    for (let bin = 0; bin < cqt.bins; bin += 1) {
-      const yBase = (cqt.bins - 1 - bin) * pixelsPerBin
-      const value = cqt.data[frame * cqt.bins + bin]
-      const norm = Math.sqrt(Math.min(1, Math.max(0, (value - cqt.min) / range)))
-      const hsl = interpolateHsl(minHsl, maxHsl, norm)
-      const rgb = hslToRgb(hsl)
-      for (let py = 0; py < pixelsPerBin; py += 1) {
-        const row = (yBase + py) * width
-        for (let px = 0; px < basePixelsPerFrame; px += 1) {
-          const idx = (row + frame * basePixelsPerFrame + px) * 4
-          image.data[idx] = rgb.r
-          image.data[idx + 1] = rgb.g
-          image.data[idx + 2] = rgb.b
-          image.data[idx + 3] = 255
+  const renderChunk = (index: number, canvas?: HTMLCanvasElement | null) => {
+    const chunkIndex = Math.min(chunkCount - 1, Math.max(0, Math.floor(index)))
+    const startFrame = chunkIndex * chunkFrameCount
+    const frameCount = Math.max(0, Math.min(chunkFrameCount, cqt.frames - startFrame))
+    const chunkWidth = Math.max(1, frameCount * basePixelsPerFrame)
+    const target = canvas ?? (chunkIndex === 0 ? options?.canvas : undefined) ?? document.createElement("canvas")
+    target.width = chunkWidth
+    target.height = Math.max(1, height)
+
+    const ctx = target.getContext("2d")
+    if (!ctx) {
+      throw new Error("Failed to get canvas context")
+    }
+
+    const image = ctx.createImageData(chunkWidth, Math.max(1, height))
+
+    for (let frame = 0; frame < frameCount; frame += 1) {
+      const sourceFrame = startFrame + frame
+      for (let bin = 0; bin < cqt.bins; bin += 1) {
+        const yBase = (cqt.bins - 1 - bin) * pixelsPerBin
+        const value = cqt.data[sourceFrame * cqt.bins + bin]
+        const norm = Math.sqrt(Math.min(1, Math.max(0, (value - cqt.min) / range)))
+        const hsl = interpolateHsl(minHsl, maxHsl, norm)
+        const rgb = hslToRgb(hsl)
+        for (let py = 0; py < pixelsPerBin; py += 1) {
+          const row = (yBase + py) * chunkWidth
+          for (let px = 0; px < basePixelsPerFrame; px += 1) {
+            const idx = (row + frame * basePixelsPerFrame + px) * 4
+            image.data[idx] = rgb.r
+            image.data[idx + 1] = rgb.g
+            image.data[idx + 2] = rgb.b
+            image.data[idx + 3] = 255
+          }
         }
       }
     }
 
-    if (frame % 200 === 0) {
-      await waitIdle()
+    ctx.putImageData(image, 0, 0)
+
+    return {
+      index: chunkIndex,
+      startFrame,
+      frameCount,
+      width: chunkWidth,
+      height: Math.max(1, height),
+      canvas: target,
     }
   }
-
-  ctx.putImageData(image, 0, 0)
 
   return {
     width,
     height,
-    canvas,
-    imageData: image,
+    frameCount: cqt.frames,
+    bins: cqt.bins,
+    basePixelsPerFrame,
+    pixelsPerBin,
+    chunkFrameCount,
+    chunkCount,
+    renderChunk,
+  }
+}
+
+
+export async function drawCqtHeatmap(cqt: PreprocessResult, options?: CqtHeatmapOptions) {
+  const renderer = createCqtHeatmapRenderer(cqt, options)
+  const chunks: CqtHeatmapChunk[] = []
+  const waitIdle = createIdleAwaiter()
+
+  for (let index = 0; index < renderer.chunkCount; index += 1) {
+    chunks.push(renderer.renderChunk(index))
+    if (index > 0 && index % 8 === 0) {
+      await waitIdle()
+    }
+  }
+
+  return {
+    ...renderer,
+    chunks,
   }
 }
 

@@ -1,7 +1,7 @@
 import { computed, effect, signal } from "@preact/signals"
 import type { ChordColorMode } from "./chordColors"
 import { cqt, duration } from "./appState"
-import { drawCqtHeatmap } from "./drawCqtHeatmap"
+import { createCqtHeatmapRenderer, type CqtHeatmapRenderer } from "./drawCqtHeatmap"
 
 
 const BASE_PIXELS_PER_FRAME = 3
@@ -63,7 +63,7 @@ export const playheadX = computed(() => {
 })
 
 
-export const heatmapData = signal<Awaited<ReturnType<typeof drawCqtHeatmap>> | null>(null)
+export const heatmapData = signal<CqtHeatmapRenderer | null>(null)
 
 effect(() => {
   const cqtData = cqt.value
@@ -71,11 +71,7 @@ effect(() => {
     heatmapData.value = null
     return
   }
-  const callback = requestIdleCallback(async () => {
-    heatmapData.value = await drawCqtHeatmap(cqtData)
-    console.log("heatmapData", heatmapData.value)
-  })
-  return () => cancelIdleCallback(callback)
+  heatmapData.value = createCqtHeatmapRenderer(cqtData)
 })
 
 
