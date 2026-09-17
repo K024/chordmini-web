@@ -1,13 +1,16 @@
 import { hybridCqt } from "../preprocessing/hybrid_cqt"
-import { noteToHz } from "../preprocessing/wavelet"
+import {
+  CQT_BINS,
+  CQT_BINS_PER_OCTAVE,
+  CQT_FMIN,
+  CQT_HOP_LENGTH,
+} from "../preprocessing/cqtConfig"
+import { runCqtOnnx } from "../onnx/cqtPreprocess"
 import type { ProgressReporter } from "../utils"
 
 
-export const CQT_BINS = 288
-export const CQT_BINS_PER_OCTAVE = 36
-export const CQT_FMIN = noteToHz("F#0")
-
-export const HOP_LENGTH = 512
+export { CQT_BINS, CQT_BINS_PER_OCTAVE, CQT_FMIN }
+export const HOP_LENGTH = CQT_HOP_LENGTH
 
 
 export interface PreprocessResult {
@@ -53,6 +56,20 @@ export async function preprocess(decoded: { samples: Float32Array; sr: number; d
 
   const sr = decoded.sr
   const hopLength = HOP_LENGTH
+
+  if (import.meta.env.VITE_CQT_PREPROCESS !== "js") {
+    try {
+      const onnx = await runCqtOnnx(decoded.samples, sr, progress)
+      return {
+        ...onnx,
+        sr,
+        hopLength,
+        duration: decoded.duration,
+      }
+    } catch (error) {
+      console.warn("CQT ONNX preprocessing failed; falling back to JS.", error)
+    }
+  }
 
   progress?.("Running hybrid CQT...")
   const cqt = hybridCqt(decoded.samples, {
