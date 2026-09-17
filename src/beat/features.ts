@@ -68,9 +68,9 @@ export function extractBeatFeatures(
   }
 }
 
-function maybeScaleIntegerLikeSignal(
+export function maybeScaleIntegerLikeSignal(
   signal: Float32Array,
-  cfg: MadmomDownbeatFeatureConfig
+  cfg: MadmomDownbeatFeatureConfig = DEFAULT_CONFIG
 ): Float32Array {
   if (!cfg.autoScaleIntegerLikeInput) return signal
   let maxAbs = 0
