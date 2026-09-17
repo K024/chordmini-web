@@ -1,5 +1,4 @@
-import type Rollup from "rollup" // indirect
-import type { Plugin, ResolvedConfig } from "vite"
+import type { Plugin, ResolvedConfig, Rolldown } from "vite"
 import replace from "@rollup/plugin-replace"
 import { glob } from "tinyglobby" // indirect
 import { createHash } from "node:crypto"
@@ -86,7 +85,7 @@ export function serviceWorkerPlugin(swConfig?: serviceWorkerPluginConfig): Plugi
       if (swReplace)
         plugins.push(replace({ [swReplace]: JSON.stringify(manifest), preventAssignment: true }))
 
-      let output: Rollup.OutputChunk
+      let output: Rolldown.OutputChunk
       const buildResult = await viteBuild({
         configFile: false,
         root: config.root,
@@ -109,10 +108,10 @@ export function serviceWorkerPlugin(swConfig?: serviceWorkerPluginConfig): Plugi
             },
           },
         },
-      }) as Rollup.RollupOutput | Rollup.RollupOutput[]
+      }) as Rolldown.RolldownOutput | Rolldown.RolldownOutput[]
 
       const rollupOutput = Array.isArray(buildResult) ? buildResult[0] : buildResult
-      output = rollupOutput.output[0] as Rollup.OutputChunk
+      output = rollupOutput.output[0] as Rolldown.OutputChunk
 
       // starting from rollup 3, no need to add source mapping url to code
       this.emitFile({

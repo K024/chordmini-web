@@ -18,7 +18,7 @@ export async function getModelSession(url: string) {
     arrayBuffer,
     {
       executionProviders: [
-        // "webgpu", // not numerically stable now
+        "webgpu", // ~~not numerically stable now~~ to be checked
         "wasm",
       ],
     }

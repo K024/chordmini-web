@@ -1,7 +1,7 @@
 import { defineConfig } from "vite"
 import preact from "@preact/preset-vite"
 import tailwindcss from "@tailwindcss/vite"
-import { serviceWorkerPlugin } from "./src/service-worker/vite/serviceWorker"
+import { serviceWorkerPlugin } from "./src/service-worker/vite/serviceWorker.ts"
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -20,13 +20,14 @@ export default defineConfig({
       "Cross-Origin-Resource-Policy": "cross-origin",
     },
   },
-  resolve: {
-    conditions: ["onnxruntime-web-use-extern-wasm", "import", "browser"],
-  },
   build: {
-    minify: "esbuild",
-  },
-  esbuild: {
-    legalComments: "eof",
+    minify: "oxc",
+    rolldownOptions: {
+      output: {
+        comments: {
+          legal: true,
+        },
+      },
+    },
   },
 })
